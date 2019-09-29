@@ -1,4 +1,31 @@
 library(breakDown)
 library(tidyverse)
 library(randomforest)
-library(randomforestexplainer)
+library(caret)
+
+#Extraction de variable depuis les données brutes
+AB_NYC_2019 <- AB_NYC_2019 %>% 
+select(neighbourhood_group, room_type, price, minimum_nights, number_of_reviews, reviews_per_month, availability_365) %>% 
+na.omit()
+
+#Préparation des variables de travail
+AB_NYC_2019 <- AB_NYC_2019 %>% 
+mutate_if(is.character, as.factor) %>% 
+mutate_if(is.character, as.numeric)
+
+#500 observations aléatoires
+AB_NYC_2019 <- AB_NYC_2019 %>% sample_n(500)
+
+#train / test : 75/25
+train <- AB_NYC_2019 %>% sample_frac(0.75)
+test <- AB_NYC_2019 %>% anti_join(train)
+
+#Modélisation basique
+controle_param <- trainControl(method = "cv", 
+number = 10, 
+allowParallel = TRUE)
+
+mod0 <- train(availability_365~., 
+data = train, 
+trControl = controle_param, 
+method = "rf")
